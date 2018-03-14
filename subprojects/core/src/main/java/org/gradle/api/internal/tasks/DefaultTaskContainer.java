@@ -116,8 +116,8 @@ public class DefaultTaskContainer extends DefaultTaskCollection<Task> implements
     }
 
     public <T extends Task> T create(String name, Class<T> type) {
-        return create(name, type, (Object[]) null);
-    }
+        T task = instantiator.create(name, type);
+        return addTask(task, false);    }
 
     @Override
     public <T extends Task> T create(String name, Class<T> type, Object... constructorArgs) throws InvalidUserDataException {
