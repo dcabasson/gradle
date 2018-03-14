@@ -123,9 +123,9 @@ public class DefaultTaskContainer extends DefaultTaskCollection<Task> implements
     public <T extends Task> T create(String name, Class<T> type, Object... constructorArgs) throws InvalidUserDataException {
         T task;
         if (type.isAssignableFrom(TaskInternal.class)) {
-            task = type.cast(taskFactory.create(name, TaskInternal.class));
+            task = type.cast(taskFactory.create(name, TaskInternal.class, constructorArgs));
         } else {
-            task = type.cast(taskFactory.create(name, type.asSubclass(TaskInternal.class)));
+            task = type.cast(taskFactory.create(name, type.asSubclass(TaskInternal.class), constructorArgs));
         }
         return addTask(task, false);
     }
