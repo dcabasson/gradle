@@ -23,8 +23,8 @@ import org.gradle.api.Namer;
 import org.gradle.internal.Transformers;
 import org.gradle.internal.metaobject.AbstractDynamicObject;
 import org.gradle.internal.metaobject.ConfigureDelegate;
-import org.gradle.internal.metaobject.DynamicObject;
 import org.gradle.internal.metaobject.DynamicInvokeResult;
+import org.gradle.internal.metaobject.DynamicObject;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.util.ConfigureUtil;
 
@@ -39,14 +39,10 @@ public abstract class AbstractPolymorphicDomainObjectContainer<T>
         super(type, instantiator, namer);
     }
 
-    protected abstract <U extends T> U doCreate(String name, Class<U> type, Object... args);
+    protected abstract <U extends T> U doCreate(String name, Class<U> type);
 
     public <U extends T> U create(String name, Class<U> type) {
-        return create(name, type, null, null);
-    }
-
-    public <U extends T> U create(String name, Class<U> type, Object... args) {
-        return create(name, type, null, args);
+        return create(name, type, null);
     }
 
     public <U extends T> U maybeCreate(String name, Class<U> type) throws InvalidUserDataException {
@@ -58,12 +54,8 @@ public abstract class AbstractPolymorphicDomainObjectContainer<T>
     }
 
     public <U extends T> U create(String name, Class<U> type, Action<? super U> configuration) {
-        return create(name, type, configuration, (Object[]) null);
-    }
-
-    public <U extends T> U create(String name, Class<U> type, Action<? super U> configuration, Object... args) {
         assertCanAdd(name);
-        U object = doCreate(name, type, args);
+        U object = doCreate(name, type);
         add(object);
         if (configuration != null) {
             configuration.execute(object);

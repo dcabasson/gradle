@@ -23,7 +23,9 @@ import org.gradle.model.internal.core.NamedEntityInstantiator;
 import java.util.Map;
 
 public interface ITaskFactory extends NamedEntityInstantiator<TaskInternal> {
-    public ITaskFactory createChild(ProjectInternal project, Instantiator instantiator);
+    ITaskFactory createChild(ProjectInternal project, Instantiator instantiator);
 
-    public TaskInternal createTask(Map<String, ?> args);
+    TaskInternal createTask(Map<String, ?> args);
+
+    <S extends TaskInternal> S create(String name, Class<S> type, Object... args);
 }

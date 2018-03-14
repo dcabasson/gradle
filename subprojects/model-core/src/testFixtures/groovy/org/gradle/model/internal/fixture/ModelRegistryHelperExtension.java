@@ -123,11 +123,6 @@ public class ModelRegistryHelperExtension {
                     public <S extends I> S create(String name, Class<S> type) {
                         return instantiator.create(name, type);
                     }
-
-                    @Override
-                    public <S extends I> S create(String name, Class<S> type, Object... args) {
-                        return instantiator.create(name, type, args);
-                    }
                 });
             }
         });

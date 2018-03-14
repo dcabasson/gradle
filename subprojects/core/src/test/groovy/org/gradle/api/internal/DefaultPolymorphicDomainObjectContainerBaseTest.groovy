@@ -42,7 +42,7 @@ class PolymorphicTestContainer extends AbstractPolymorphicDomainObjectContainer<
     }
 
     @Override
-    protected <U extends TestObject> U doCreate(String name, Class<U> type, Object... args) {
+    protected <U extends TestObject> U doCreate(String name, Class<U> type) {
         throw new UnsupportedOperationException("doCreate")
     }
 

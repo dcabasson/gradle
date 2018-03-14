@@ -60,7 +60,7 @@ public class DefaultTaskContainerTest extends Specification {
     void "creates by name"() {
         given:
         def task = task("task")
-        taskFactory.create("task", DefaultTask, null) >> task
+        taskFactory.create("task", DefaultTask) >> task
 
         expect:
         container.create("task") == task
@@ -69,7 +69,7 @@ public class DefaultTaskContainerTest extends Specification {
     void "creates by name and type"() {
         given:
         def task = task("task", CustomTask)
-        taskFactory.create("task", CustomTask, null) >> task
+        taskFactory.create("task", CustomTask) >> task
 
         expect:
         container.create("task", CustomTask.class) == task
@@ -80,7 +80,7 @@ public class DefaultTaskContainerTest extends Specification {
         final Closure action = {}
         def task = task("task")
 
-        taskFactory.create("task", DefaultTask, null) >> task
+        taskFactory.create("task", DefaultTask) >> task
 
         when:
         def added = container.create("task", action)
@@ -95,7 +95,7 @@ public class DefaultTaskContainerTest extends Specification {
         def action = Mock(Action)
         def task = task("task")
 
-        taskFactory.create("task", DefaultTask, null) >> task
+        taskFactory.create("task", DefaultTask) >> task
 
         when:
         def added = container.create("task", action)
@@ -132,7 +132,7 @@ public class DefaultTaskContainerTest extends Specification {
         def task = task("task")
 
         container.addRule(rule)
-        taskFactory.create("task", DefaultTask, null) >> task
+        taskFactory.create("task", DefaultTask) >> task
 
         when:
         container.create("task")
@@ -144,7 +144,7 @@ public class DefaultTaskContainerTest extends Specification {
     void "prevents duplicate tasks"() {
         given:
         def task = addTask("task")
-        taskFactory.create("task", DefaultTask, null) >> { this.task("task") }
+        taskFactory.create("task", DefaultTask) >> { this.task("task") }
 
         when:
         container.create("task")
@@ -352,7 +352,7 @@ public class DefaultTaskContainerTest extends Specification {
         given:
         def task = task("task")
 
-        taskFactory.create("task", DefaultTask, null) >> task
+        taskFactory.create("task", DefaultTask) >> task
 
         when:
         def added = container.maybeCreate("task")
@@ -373,7 +373,7 @@ public class DefaultTaskContainerTest extends Specification {
         given:
         def task = task("task", CustomTask)
 
-        taskFactory.create("task", CustomTask, null) >> task
+        taskFactory.create("task", CustomTask) >> task
 
         when:
         def added = container.maybeCreate("task", CustomTask)

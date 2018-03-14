@@ -52,11 +52,6 @@ public class DefaultPolymorphicNamedEntityInstantiator<T> implements Polymorphic
         return factory.create(name);
     }
 
-    @Override
-    public <S extends T> S create(String name, Class<S> type, Object... args) {
-        return create(name, type); // TODO(adamb): what's the right thing to do here?
-    }
-
     public String getSupportedTypeNames() {
         List<String> names = Lists.newArrayList();
         for (Class<?> clazz : factories.keySet()) {

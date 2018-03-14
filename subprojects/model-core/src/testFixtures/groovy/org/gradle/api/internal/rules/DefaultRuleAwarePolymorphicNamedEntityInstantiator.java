@@ -42,11 +42,6 @@ public class DefaultRuleAwarePolymorphicNamedEntityInstantiator<T> implements Ru
     }
 
     @Override
-    public <S extends T> S create(String name, Class<S> type, Object... args) {
-        return instantiator.create(name, type, args);
-    }
-
-    @Override
     public <U extends T> void registerFactory(Class<U> type, NamedDomainObjectFactory<? extends U> factory, ModelRuleDescriptor descriptor) {
         registry.registerFactory(type, factory, descriptor);
     }

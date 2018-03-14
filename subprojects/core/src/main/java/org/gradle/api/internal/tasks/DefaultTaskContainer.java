@@ -121,7 +121,12 @@ public class DefaultTaskContainer extends DefaultTaskCollection<Task> implements
 
     @Override
     public <T extends Task> T create(String name, Class<T> type, Object... constructorArgs) throws InvalidUserDataException {
-        T task = instantiator.create(name, type, constructorArgs);
+        T task;
+        if (type.isAssignableFrom(TaskInternal.class)) {
+            task = type.cast(taskFactory.create(name, TaskInternal.class));
+        } else {
+            task = type.cast(taskFactory.create(name, type.asSubclass(TaskInternal.class)));
+        }
         return addTask(task, false);
     }
 
@@ -307,14 +312,6 @@ public class DefaultTaskContainer extends DefaultTaskCollection<Task> implements
                 return type.cast(taskFactory.create(name, TaskInternal.class));
             }
             return type.cast(taskFactory.create(name, type.asSubclass(TaskInternal.class)));
-        }
-
-        @Override
-        public <S extends Task> S create(String name, Class<S> type, Object... args) {
-            if (type.isAssignableFrom(TaskInternal.class)) {
-                return type.cast(taskFactory.create(name, TaskInternal.class, args));
-            }
-            return type.cast(taskFactory.create(name, type.asSubclass(TaskInternal.class), args));
         }
     }
 
