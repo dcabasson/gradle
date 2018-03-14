@@ -180,7 +180,7 @@ public class DependencyInjectingInstantiator implements Instantiator {
         }
 
         if (injectConstructors.size() != 1) {
-            return ((DirectInstantiator) DirectInstantiator.INSTANCE).matchingConstructor(type, paramTypes.toArray(new Class[paramTypes.size()]));
+            return DirectInstantiator.INSTANCE.matchingConstructor(type, paramTypes.toArray(new Class[paramTypes.size()]));
         }
 
         if (injectConstructors.isEmpty()) {

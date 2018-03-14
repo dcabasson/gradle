@@ -27,7 +27,7 @@ import java.util.Arrays;
 
 public class DirectInstantiator implements Instantiator {
 
-    public static final Instantiator INSTANCE = new DirectInstantiator();
+    public static final DirectInstantiator INSTANCE = new DirectInstantiator();
 
     private final ConstructorCache constructorCache = new ConstructorCache();
 
