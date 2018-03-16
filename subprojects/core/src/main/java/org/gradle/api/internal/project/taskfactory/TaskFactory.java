@@ -175,6 +175,9 @@ public class TaskFactory implements ITaskFactory {
         if (constructorArgs instanceof Object[]) {
             return (Object[]) constructorArgs;
         }
+        if (constructorArgs != null) {
+            throw new IllegalArgumentException(String.format("%s must be a List or Object[].  Received %s", Task.TASK_CONSTRUCTOR_ARGS, constructorArgs.getClass()));
+        }
         return null;
     }
 }
