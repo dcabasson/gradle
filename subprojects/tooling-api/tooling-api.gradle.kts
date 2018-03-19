@@ -5,8 +5,18 @@ import org.gradle.gradlebuild.packaging.ShadedJar
 import org.gradle.gradlebuild.test.integrationtests.IntegrationTest
 import org.gradle.gradlebuild.unittestandcompile.ModuleType
 import org.gradle.plugins.ide.eclipse.model.EclipseClasspath
+import org.gradle.gradlebuild.packaging.ShadeClassesTransform
+
+val artifactType: Attribute<String> = Attribute.of("artifactType", String::class.java)
 
 val testPublishRuntime by configurations.creating
+val relocatedClasses by configurations.creating
+relocatedClasses.apply {
+    exclude(mapOf("group" to "org.slf4j", "module" to "slf4j-api"))
+    extendsFrom(configurations.runtimeClasspath)
+    attributes.attribute(artifactType, "relocated_classes")
+    attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage::class.java, Usage.JAVA_RUNTIME))
+}
 
 dependencies {
     compile(project(":core"))
@@ -26,6 +36,19 @@ dependencies {
     crossVersionTestRuntime(project(":buildComparison"))
     crossVersionTestRuntime(project(":ivy"))
     crossVersionTestRuntime(project(":maven"))
+
+    registerTransform {
+        from.attribute(artifactType, "jar")
+        to.attribute(artifactType, "relocated_classes")
+        artifactTransform(ShadeClassesTransform::class.java) {
+            params(
+                "org.gradle.internal.impldep",
+                setOf("org.gradle.tooling"),
+                setOf("org.gradle", "org.slf4j", "sun.misc"),
+                setOf("org.gradle.tooling.provider.model")
+            )
+        }
+    }
 }
 
 gradlebuildJava {
@@ -119,3 +142,12 @@ integTestTasks.all {
 }
 
 the<TestFileCleanUpExtension>().isErrorWhenNotEmpty = false
+
+tasks.create("testResolution") {
+    inputs.files(relocatedClasses)
+    doLast {
+        relocatedClasses.files.forEach {
+            println(it)
+        }
+    }
+}
