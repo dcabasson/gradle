@@ -19,10 +19,8 @@ package org.gradle.api.internal
 import org.gradle.api.Transformer
 import org.gradle.api.reflect.ObjectInstantiationException
 import org.gradle.cache.internal.CrossBuildInMemoryCache
-import org.gradle.internal.Pair
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.internal.service.UnknownServiceException
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import javax.inject.Inject
@@ -280,7 +278,7 @@ class DependencyInjectingInstantiatorTest extends Specification {
     static class TestCache implements CrossBuildInMemoryCache<Class<?>, DependencyInjectingInstantiator.CachedConstructor> {
         @Override
         DependencyInjectingInstantiator.CachedConstructor get(Class<?> key) {
-            return null
+            return null;
         }
 
         @Override
