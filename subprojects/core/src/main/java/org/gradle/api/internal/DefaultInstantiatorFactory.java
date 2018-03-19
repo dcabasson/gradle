@@ -18,25 +18,22 @@ package org.gradle.api.internal;
 
 import org.gradle.cache.internal.CrossBuildInMemoryCache;
 import org.gradle.cache.internal.CrossBuildInMemoryCacheFactory;
-import org.gradle.internal.Pair;
 import org.gradle.internal.reflect.DirectInstantiator;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.DefaultServiceRegistry;
 import org.gradle.internal.service.ServiceRegistry;
 
-import java.util.List;
-
 public class DefaultInstantiatorFactory implements InstantiatorFactory {
-    private final CrossBuildInMemoryCache<Pair<Class<?>, List<Class<?>>>, DependencyInjectingInstantiator.CachedConstructor> decoratedConstructorCache;
-    private final CrossBuildInMemoryCache<Pair<Class<?>, List<Class<?>>>, DependencyInjectingInstantiator.CachedConstructor> undecoratedConstructorCache;
+    private final CrossBuildInMemoryCache<Class<?>, DependencyInjectingInstantiator.CachedConstructor> decoratedConstructorCache;
+    private final CrossBuildInMemoryCache<Class<?>, DependencyInjectingInstantiator.CachedConstructor> undecoratedConstructorCache;
     private final ServiceRegistry noServices = new DefaultServiceRegistry();
     private final ClassGenerator classGenerator;
     private final Instantiator decoratingInstantiator;
 
     public DefaultInstantiatorFactory(ClassGenerator classGenerator, CrossBuildInMemoryCacheFactory cacheFactory) {
         this.classGenerator = classGenerator;
-        this.decoratedConstructorCache = cacheFactory.newCache();
-        this.undecoratedConstructorCache = cacheFactory.newCache();
+        this.decoratedConstructorCache = cacheFactory.newClassCache();
+        this.undecoratedConstructorCache = cacheFactory.newClassCache();
         this.decoratingInstantiator = new ClassGeneratorBackedInstantiator(classGenerator, DirectInstantiator.INSTANCE);
     }
 

@@ -16,11 +16,7 @@
 package org.gradle.api.internal;
 
 import groovy.lang.Closure;
-import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer;
-import org.gradle.api.InvalidUserDataException;
-import org.gradle.api.Named;
-import org.gradle.api.NamedDomainObjectFactory;
-import org.gradle.api.Namer;
+import org.gradle.api.*;
 import org.gradle.internal.Cast;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.model.internal.core.NamedEntityInstantiator;

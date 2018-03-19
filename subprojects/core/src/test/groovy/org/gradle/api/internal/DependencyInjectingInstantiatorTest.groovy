@@ -193,7 +193,6 @@ class DependencyInjectingInstantiatorTest extends Specification {
         e.cause == failure
     }
 
-    @Ignore // TODO(adamb)
     def "fails when class has multiple constructors and none are annotated"() {
         given:
         classGenerator.generate(_) >> { Class<?> c -> c }
@@ -206,7 +205,6 @@ class DependencyInjectingInstantiatorTest extends Specification {
         e.cause.message == "Class $HasNoInjectConstructor.name has no constructor that is annotated with @Inject."
     }
 
-    @Ignore // TODO(adamb)
     def "fails when class has multiple constructors with different visibilities and none are annotated"() {
         given:
         classGenerator.generate(_) >> { Class<?> c -> c }
@@ -219,7 +217,6 @@ class DependencyInjectingInstantiatorTest extends Specification {
         e.cause.message == "Class $HasMixedConstructors.name has no constructor that is annotated with @Inject."
     }
 
-    @Ignore // TODO(adamb)
     def "fails when class has multiple constructors that are annotated"() {
         given:
         classGenerator.generate(_) >> { Class<?> c -> c }
@@ -232,7 +229,6 @@ class DependencyInjectingInstantiatorTest extends Specification {
         e.cause.message == "Class $HasMultipleInjectConstructors.name has multiple constructors that are annotated with @Inject."
     }
 
-    @Ignore // TODO(adamb)
     def "fails when class has multiple constructors with different visibilities that are annotated"() {
         given:
         classGenerator.generate(_) >> { Class<?> c -> c }
@@ -281,19 +277,19 @@ class DependencyInjectingInstantiatorTest extends Specification {
         e.cause.message == "The constructor for class $HasPrivateArgsConstructor.name should be annotated with @Inject."
     }
 
-    static class TestCache implements CrossBuildInMemoryCache<Pair<Class<?>, List<Class<?>>>, DependencyInjectingInstantiator.CachedConstructor> {
+    static class TestCache implements CrossBuildInMemoryCache<Class<?>, DependencyInjectingInstantiator.CachedConstructor> {
         @Override
-        DependencyInjectingInstantiator.CachedConstructor get(Pair<Class<?>, List<Class<?>>> key) {
+        DependencyInjectingInstantiator.CachedConstructor get(Class<?> key) {
             return null
         }
 
         @Override
-        DependencyInjectingInstantiator.CachedConstructor get(Pair<Class<?>, List<Class<?>>> key, Transformer<DependencyInjectingInstantiator.CachedConstructor, Pair<Class<?>, List<Class<?>>>> factory) {
+        DependencyInjectingInstantiator.CachedConstructor get(Class<?> key, Transformer<DependencyInjectingInstantiator.CachedConstructor, Class<?>> factory) {
             return factory.transform(key)
         }
 
         @Override
-        void put(Pair<Class<?>, List<Class<?>>> key, DependencyInjectingInstantiator.CachedConstructor value) {
+        void put(Class<?> key, DependencyInjectingInstantiator.CachedConstructor value) {
         }
 
         @Override

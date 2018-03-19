@@ -16,12 +16,9 @@
 
 package org.gradle.api.internal;
 
-import com.google.common.collect.ImmutableList;
 import org.gradle.api.Transformer;
 import org.gradle.api.reflect.ObjectInstantiationException;
 import org.gradle.cache.internal.CrossBuildInMemoryCache;
-import org.gradle.internal.Pair;
-import org.gradle.internal.reflect.DirectInstantiator;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.reflect.JavaReflectionUtil;
 import org.gradle.internal.service.ServiceRegistry;
@@ -39,10 +36,10 @@ import java.util.List;
 public class DependencyInjectingInstantiator implements Instantiator {
 
     private final ServiceRegistry services;
-    private final CrossBuildInMemoryCache<Pair<Class<?>, List<Class<?>>>, CachedConstructor> constructorCache;
+    private final CrossBuildInMemoryCache<Class<?>, CachedConstructor> constructorCache;
     private final ClassGenerator classGenerator;
 
-    public DependencyInjectingInstantiator(ServiceRegistry services, CrossBuildInMemoryCache<Pair<Class<?>, List<Class<?>>>, CachedConstructor> constructorCache) {
+    public DependencyInjectingInstantiator(ServiceRegistry services, CrossBuildInMemoryCache<Class<?>, CachedConstructor> constructorCache) {
         this.classGenerator = new ClassGenerator() {
             @Override
             public <T> Class<? extends T> generate(Class<T> type) {
@@ -53,7 +50,7 @@ public class DependencyInjectingInstantiator implements Instantiator {
         this.constructorCache = constructorCache;
     }
 
-    public DependencyInjectingInstantiator(ClassGenerator classGenerator, ServiceRegistry services, CrossBuildInMemoryCache<Pair<Class<?>, List<Class<?>>>, CachedConstructor> constructorCache) {
+    public DependencyInjectingInstantiator(ClassGenerator classGenerator, ServiceRegistry services, CrossBuildInMemoryCache<Class<?>, CachedConstructor> constructorCache) {
         this.classGenerator = classGenerator;
         this.services = services;
         this.constructorCache = constructorCache;
@@ -61,18 +58,13 @@ public class DependencyInjectingInstantiator implements Instantiator {
 
     public <T> T newInstance(final Class<? extends T> type, Object... parameters) {
         try {
-            ImmutableList.Builder<Class<?>> builder = ImmutableList.builder();
-            for (Object param : parameters) {
-                builder.add(param.getClass());
-            }
-            List<Class<?>> parameterTypes = builder.build();
-            CachedConstructor cached = constructorCache.get(Pair.<Class<?>, List<Class<?>>>of(type, parameterTypes), new Transformer<CachedConstructor, Pair<Class<?>, List<Class<?>>>>() {
+            CachedConstructor cached = constructorCache.get(type, new Transformer<CachedConstructor, Class<?>>() {
                 @Override
-                public CachedConstructor transform(Pair<Class<?>, List<Class<?>>> pair) {
+                public CachedConstructor transform(Class<?> aClass) {
                     try {
-                        validateType(pair.left());
-                        Class<? extends T> implClass = (Class<? extends T>) classGenerator.generate(pair.left());
-                        Constructor<?> constructor = selectConstructor(pair.left(), pair.right(), implClass);
+                        validateType(type);
+                        Class<? extends T> implClass = classGenerator.generate(type);
+                        Constructor<?> constructor = selectConstructor(type, implClass);
                         constructor.setAccessible(true);
                         return CachedConstructor.of(constructor);
                     } catch (Throwable e) {
@@ -148,7 +140,7 @@ public class DependencyInjectingInstantiator implements Instantiator {
         }
     }
 
-    private static Constructor<?> selectConstructor(Class<?> type, List<Class<?>> paramTypes, Class<?> implType) {
+    private static Constructor<?> selectConstructor(Class<?> type, Class<?> implType) {
         Constructor<?>[] constructors = implType.getDeclaredConstructors();
 
         if (constructors.length == 1) {
@@ -166,21 +158,11 @@ public class DependencyInjectingInstantiator implements Instantiator {
             }
         }
 
-        try {
-            return implType.getConstructor(paramTypes.toArray(new Class[paramTypes.size()]));
-        } catch (NoSuchMethodException e) {
-            // do nothing
-        }
-
         List<Constructor<?>> injectConstructors = new ArrayList<Constructor<?>>();
         for (Constructor<?> constructor : constructors) {
             if (constructor.getAnnotation(Inject.class) != null) {
                 injectConstructors.add(constructor);
             }
-        }
-
-        if (injectConstructors.size() != 1) {
-            return DirectInstantiator.INSTANCE.matchingConstructor(type, paramTypes.toArray(new Class[paramTypes.size()]));
         }
 
         if (injectConstructors.isEmpty()) {

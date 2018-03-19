@@ -150,7 +150,8 @@ public interface TaskContainer extends TaskCollection<Task>, PolymorphicDomainOb
     <T extends Task> T create(String name, Class<T> type) throws InvalidUserDataException;
 
     /**
-     * <p>Creates a {@link Task} with the given name and type, passing the given arguments to the constructor, and adds it to this container.</p>
+     * <p>Creates a {@link Task} with the given name and type, passing the given arguments to the {@code @Inject}-annotated constructor,
+     * and adds it to this container.</p>
      *
      * <p>After the task is added, it is made available as a property of the project, so that you can reference the task
      * by name in your build file. See <a href="../Project.html#properties">here</a> for more details.</p>
