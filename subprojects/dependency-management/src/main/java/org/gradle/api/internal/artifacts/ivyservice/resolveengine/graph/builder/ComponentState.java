@@ -17,10 +17,12 @@
 package org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.builder;
 
 import com.google.common.collect.Lists;
+import org.gradle.api.Action;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.attributes.Attribute;
 import org.gradle.api.attributes.AttributeContainer;
+import org.gradle.api.capabilities.Capability;
 import org.gradle.api.internal.artifacts.ResolvedVersionConstraint;
 import org.gradle.api.internal.artifacts.ivyservice.resolveengine.ComponentResolutionState;
 import org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.DependencyGraphComponent;
@@ -30,6 +32,7 @@ import org.gradle.api.internal.artifacts.ivyservice.resolveengine.result.Version
 import org.gradle.api.internal.attributes.AttributeContainerInternal;
 import org.gradle.api.internal.attributes.ImmutableAttributes;
 import org.gradle.internal.Cast;
+import org.gradle.internal.component.external.model.ImmutableCapability;
 import org.gradle.internal.component.model.ComponentResolveMetadata;
 import org.gradle.internal.component.model.DefaultComponentOverrideMetadata;
 import org.gradle.internal.resolve.ModuleVersionResolveException;
@@ -44,6 +47,7 @@ import java.util.Set;
  * Resolution state for a given component
  */
 public class ComponentState implements ComponentResolutionState, DependencyGraphComponent, ComponentStateWithDependents<ComponentState> {
+    private final ComponentIdentifier componentIdentifier;
     private final ModuleVersionIdentifier id;
     private final ComponentMetaDataResolver resolver;
     private final VariantNameBuilder variantNameBuilder;
@@ -51,20 +55,24 @@ public class ComponentState implements ComponentResolutionState, DependencyGraph
     private final Long resultId;
     private final ModuleResolveState module;
     private final ComponentSelectionReasonInternal selectionReason = VersionSelectionReasons.empty();
+    private final ImmutableCapability implicitCapability;
     private volatile ComponentResolveMetadata metaData;
 
     private ComponentSelectionState state = ComponentSelectionState.Selectable;
     private ModuleVersionResolveException failure;
-    private SelectorState selectedBy;
+    // The first selector that resolved this component
+    private SelectorState firstSelectedBy;
+    private List<SelectorState> selectedBy;
     private DependencyGraphBuilder.VisitState visitState = DependencyGraphBuilder.VisitState.NotSeen;
-    List<SelectorState> allResolvers;
 
-    ComponentState(Long resultId, ModuleResolveState module, ModuleVersionIdentifier id, ComponentMetaDataResolver resolver, VariantNameBuilder variantNameBuilder) {
+    ComponentState(Long resultId, ModuleResolveState module, ModuleVersionIdentifier id, ComponentIdentifier componentIdentifier, ComponentMetaDataResolver resolver, VariantNameBuilder variantNameBuilder) {
         this.resultId = resultId;
         this.module = module;
         this.id = id;
+        this.componentIdentifier = componentIdentifier;
         this.resolver = resolver;
         this.variantNameBuilder = variantNameBuilder;
+        this.implicitCapability = new ImmutableCapability(id.getGroup(), id.getName(), id.getVersion());
     }
 
     @Override
@@ -114,7 +122,17 @@ public class ComponentState implements ComponentResolutionState, DependencyGraph
 
     @Override
     public ComponentResolveMetadata getMetadata() {
+        resolve();
         return metaData;
+    }
+
+    @Override
+    public ComponentIdentifier getComponentId() {
+        // Use the resolved component id if available: this ensures that Maven Snapshot ids are correctly reported
+        if (metaData != null) {
+            return metaData.getComponentId();
+        }
+        return componentIdentifier;
     }
 
     public void restart(ComponentState selected) {
@@ -123,12 +141,19 @@ public class ComponentState implements ComponentResolutionState, DependencyGraph
         }
     }
 
-    public void selectedBy(SelectorState resolver) {
-        if (selectedBy == null) {
-            selectedBy = resolver;
-            allResolvers = Lists.newLinkedList();
+    public void selectedBy(SelectorState resolver, ComponentIdResolveResult idResolveResult) {
+        if (firstSelectedBy == null) {
+            firstSelectedBy = resolver;
+            selectedBy = Lists.newLinkedList();
         }
-        allResolvers.add(resolver);
+        selectedBy.add(resolver);
+        if (!alreadyResolved()) {
+            metaData = idResolveResult.getMetaData();
+        }
+    }
+
+    public List<SelectorState> getSelectedBy() {
+        return selectedBy;
     }
 
     /**
@@ -136,32 +161,17 @@ public class ComponentState implements ComponentResolutionState, DependencyGraph
      *
      * @return true if it has been resolved in a cheap way
      */
-    public boolean fastResolve() {
-        if (metaData != null || failure != null) {
-            return true;
-        }
-
-        ComponentIdResolveResult idResolveResult = selectedBy.getResolveResult();
-        if (idResolveResult.getFailure() != null) {
-            failure = idResolveResult.getFailure();
-            return true;
-        }
-        if (idResolveResult.getMetaData() != null) {
-            metaData = idResolveResult.getMetaData();
-            return true;
-        }
-        return false;
+    public boolean alreadyResolved() {
+        return metaData != null || failure != null;
     }
 
     public void resolve() {
-        if (fastResolve()) {
+        if (alreadyResolved()) {
             return;
         }
 
-        ComponentIdResolveResult idResolveResult = selectedBy.getResolveResult();
-
         DefaultBuildableComponentResolveResult result = new DefaultBuildableComponentResolveResult();
-        resolver.resolve(idResolveResult.getId(), DefaultComponentOverrideMetadata.forDependency(selectedBy.getDependencyMetadata()), result);
+        resolver.resolve(componentIdentifier, DefaultComponentOverrideMetadata.forDependency(firstSelectedBy.getDependencyMetadata()), result);
         if (result.getFailure() != null) {
             failure = result.getFailure();
             return;
@@ -169,16 +179,8 @@ public class ComponentState implements ComponentResolutionState, DependencyGraph
         metaData = result.getMetaData();
     }
 
-    @Override
-    public ComponentResolveMetadata getMetaData() {
-        if (metaData == null) {
-            resolve();
-        }
-        return metaData;
-    }
-
     public ResolvedVersionConstraint getVersionConstraint() {
-        return selectedBy == null ? null : selectedBy.getVersionConstraint();
+        return firstSelectedBy == null ? null : firstSelectedBy.getVersionConstraint();
     }
 
     @Override
@@ -208,11 +210,6 @@ public class ComponentState implements ComponentResolutionState, DependencyGraph
 
     public void setRoot() {
         selectionReason.setCause(VersionSelectionReasons.ROOT);
-    }
-
-    @Override
-    public ComponentIdentifier getComponentId() {
-        return getMetaData().getComponentId();
     }
 
     @Override
@@ -287,10 +284,10 @@ public class ComponentState implements ComponentResolutionState, DependencyGraph
 
     @Override
     public boolean isFromPendingNode() {
-        return selectedBy != null && selectedBy.getDependencyMetadata().isPending();
+        return firstSelectedBy != null && firstSelectedBy.getDependencyMetadata().isPending();
     }
 
-    boolean isSelected() {
+    public boolean isSelected() {
         return state == ComponentSelectionState.Selected;
     }
 
@@ -352,6 +349,43 @@ public class ComponentState implements ComponentResolutionState, DependencyGraph
         public boolean isSelectable() {
             return canSelect;
         }
+    }
+
+
+    public void forEachCapability(Action<? super Capability> action) {
+        // check conflict for each target node
+        for (NodeState target : nodes) {
+            List<? extends Capability> capabilities = target.getMetadata().getCapabilities().getCapabilities();
+            // The isEmpty check is not required, might look innocent, but Guava's performance bad for an empty immutable list
+            // because it still creates an inner class for an iterator, which delegates to an Array iterator, which does... nothing.
+            // so just adding this check has a significant impact because most components do not declare any capability
+            if (!capabilities.isEmpty()) {
+                for (Capability capability : capabilities) {
+                    action.execute(capability);
+                }
+            }
+        }
+    }
+
+    public Capability findCapability(String group, String name) {
+        if (id.getGroup().equals(group) && id.getName().equals(name)) {
+            return implicitCapability;
+        }
+        return findCapabilityOnTarget(group, name);
+    }
+
+    private Capability findCapabilityOnTarget(String group, String name) {
+        for (NodeState target : nodes) {
+            List<? extends Capability> capabilities = target.getMetadata().getCapabilities().getCapabilities();
+            if (!capabilities.isEmpty()) { // Not required, but Guava's performance bad for an empty immutable list
+                for (Capability capability : capabilities) {
+                    if (capability.getGroup().equals(group) && capability.getName().equals(name)) {
+                        return capability;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
 }

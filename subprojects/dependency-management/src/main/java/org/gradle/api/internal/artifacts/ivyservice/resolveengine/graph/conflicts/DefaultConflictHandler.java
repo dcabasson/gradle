@@ -32,7 +32,7 @@ import java.util.Set;
 
 import static org.gradle.api.internal.artifacts.ivyservice.resolveengine.graph.conflicts.PotentialConflictFactory.potentialConflict;
 
-public class DefaultConflictHandler implements ConflictHandler {
+public class DefaultConflictHandler implements ModuleConflictHandler {
 
     private final static Logger LOGGER = Logging.getLogger(DefaultConflictHandler.class);
 
@@ -49,10 +49,10 @@ public class DefaultConflictHandler implements ConflictHandler {
      * Registers new newModule and returns an instance of a conflict if conflict exists.
      */
     @Nullable
-    public PotentialConflict registerModule(CandidateModule newModule) {
-        ModuleReplacementsData.Replacement replacement = moduleReplacements.getReplacementFor(newModule.getId());
+    public PotentialConflict registerCandidate(CandidateModule candidate) {
+        ModuleReplacementsData.Replacement replacement = moduleReplacements.getReplacementFor(candidate.getId());
         ModuleIdentifier replacedBy = replacement == null ? null : replacement.getTarget();
-        return potentialConflict(conflicts.newElement(newModule.getId(), newModule.getVersions(), replacedBy));
+        return potentialConflict(conflicts.newElement(candidate.getId(), candidate.getVersions(), replacedBy));
     }
 
     /**
@@ -74,7 +74,7 @@ public class DefaultConflictHandler implements ConflictHandler {
             throw UncheckedException.throwAsUncheckedException(details.getFailure());
         }
         ComponentResolutionState selected = details.getSelected();
-        ConflictResolutionResult result = new DefaultConflictResolutionResult(conflict.participants, selected, conflict.candidates);
+        ConflictResolutionResult result = new DefaultConflictResolutionResult(conflict.participants, selected);
         resolutionAction.execute(result);
         maybeSetReason(conflict.participants, selected);
         LOGGER.debug("Selected {} from conflicting modules {}.", selected, conflict.candidates);
