@@ -84,7 +84,7 @@ The incubating `operatingSystems` property on native components has been replace
 
 ### Change in behavior for tasks extending `AbstractArchiveTask` or subtypes (`Zip`, `Jar`, `War`, `Ear`, `Tar`) 
 
-The `AbstractArchiveTask` has several new properties using the [Provider API](userguide/lazy_configuration.html). Plugins that extend these types and override methods from the base class may no longer behave the same way. Internally, `AbstractArchiveTask` prefers the new properties and methods like `getArchiveName()` are façades over the new properties. 
+The `AbstractArchiveTask` has several new properties using the <<lazy_configuration.adoc#provider-files-api-reference,Provider API>>. Plugins that extend these types and override methods from the base class may no longer behave the same way. Internally, `AbstractArchiveTask` prefers the new properties and methods like `getArchiveName()` are façades over the new properties. 
 
 If your plugin/build only uses these types (and does not extend them), nothing has changed.
 
@@ -106,10 +106,6 @@ Follow the API links to learn how to deal with these deprecations (if no extra i
 ----
 
 ////
-== Changes in detail
-
-[[rel5.X:title]]
-=== [5.X] Title
-
-Details...
+== Section Changes to specifying operating system for native projects
+Correcting the link to the Provider API
 ////
